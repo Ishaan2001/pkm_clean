@@ -48,6 +48,7 @@ class User(Base):
     # Relationships
     notes = relationship("Note", back_populates="user")
     notebooks = relationship("Notebook", back_populates="user")
+    push_subscriptions = relationship("PushSubscription", back_populates="user", cascade="all, delete-orphan")
 
 class Note(Base):
     __tablename__ = "notes"
@@ -76,6 +77,22 @@ class Notebook(Base):
     # Relationships
     user = relationship("User", back_populates="notebooks")
     notes = relationship("Note", secondary=note_notebooks, back_populates="notebooks")
+
+
+class PushSubscription(Base):
+    __tablename__ = "push_subscriptions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    endpoint = Column(String, nullable=False, unique=True, index=True)
+    p256dh_key = Column(String, nullable=False)  # Public key for encryption
+    auth_key = Column(String, nullable=False)    # Authentication secret
+    user_agent = Column(String, nullable=True)   # Browser/device info for debugging
+    created_at = Column(DateTime, default=lambda: datetime.utcnow())
+    updated_at = Column(DateTime, default=lambda: datetime.utcnow(), onupdate=lambda: datetime.utcnow())
+    
+    # Relationships
+    user = relationship("User", back_populates="push_subscriptions")
 
 def get_db():
     db = SessionLocal()

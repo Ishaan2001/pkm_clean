@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useNotes } from '../contexts/NotesContext';
 import { useAuth } from '../contexts/AuthContext';
 import NoteCard from '../components/NoteCard';
+import NotificationSettings from '../components/NotificationSettings';
 import type { Note } from '../types/note';
 
 const Search: React.FC = () => {
@@ -13,6 +14,7 @@ const Search: React.FC = () => {
   const [searchResults, setSearchResults] = useState<Note[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showNotificationSettings, setShowNotificationSettings] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -124,6 +126,19 @@ const Search: React.FC = () => {
                   
                   <div className="p-2">
                     <button
+                      onClick={() => {
+                        setShowNotificationSettings(true);
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-left text-gray-300 hover:bg-gray-700 rounded-lg transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM9 6H4l5-5v5z" />
+                      </svg>
+                      Daily Reminders
+                    </button>
+                    
+                    <button
                       onClick={handleLogout}
                       className="w-full flex items-center gap-3 px-3 py-2 text-left text-red-400 hover:bg-gray-700 rounded-lg transition-colors"
                     >
@@ -224,6 +239,12 @@ const Search: React.FC = () => {
           </div>
         )}
       </main>
+      
+      {/* Notification Settings Modal */}
+      <NotificationSettings
+        isOpen={showNotificationSettings}
+        onClose={() => setShowNotificationSettings(false)}
+      />
     </div>
   );
 };

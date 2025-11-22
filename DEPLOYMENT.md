@@ -38,6 +38,9 @@ The database tables will be automatically created on first backend startup using
    passlib[bcrypt]>=1.7.4
    email-validator>=2.0.0
    psycopg2-binary>=2.9.0
+   pywebpush>=1.14.0
+   apscheduler>=3.10.0
+   pytz>=2023.3
    ```
 
 ### Deploy to Render
@@ -55,7 +58,15 @@ DATABASE_URL=postgresql://postgres:[password]@[host]:5432/postgres
 GEMINI_API_KEY=your_gemini_api_key
 JWT_SECRET_KEY=your_secure_jwt_secret_key
 FRONTEND_ORIGINS=https://your-app.vercel.app
+VAPID_PUBLIC_KEY=your_vapid_public_key
+VAPID_PRIVATE_KEY=your_vapid_private_key
+VAPID_SUBJECT=mailto:your-email@example.com
 ENVIRONMENT=production
+```
+
+**Note**: Generate VAPID keys using:
+```bash
+npx web-push generate-vapid-keys
 ```
 
 ## 3. Frontend Deployment (Vercel)
@@ -89,7 +100,10 @@ ENVIRONMENT=production
 Set these in Vercel dashboard:
 ```bash
 VITE_API_URL=https://your-backend.onrender.com
+VITE_VAPID_PUBLIC_KEY=your_vapid_public_key
 ```
+
+**Note**: Use the same VAPID public key from your backend configuration.
 
 ## 4. Post-Deployment Setup
 
@@ -108,6 +122,14 @@ VITE_API_URL=https://your-backend.onrender.com
 2. Verify AI summary generation
 3. Test CRUD operations
 
+### Test Push Notifications
+1. Go to Search page → User menu → "Daily Reminders"
+2. Enable notifications (browser will request permission)
+3. Use "Send Test Notification" button
+4. Verify notification appears on desktop/mobile
+5. Check scheduler status: `GET /api/push/scheduler/status`
+6. Verify daily notifications are scheduled for 10 AM IST
+
 ## 5. Production Checklist
 
 ### Security
@@ -115,12 +137,20 @@ VITE_API_URL=https://your-backend.onrender.com
 - [ ] Database credentials secure
 - [ ] CORS properly configured
 - [ ] HTTPS enabled on both domains
+- [ ] VAPID keys securely stored
 
 ### Performance
 - [ ] Database connection pooling configured
 - [ ] Frontend assets optimized
 - [ ] Service worker functioning
 - [ ] PWA installation working
+
+### Push Notifications
+- [ ] VAPID keys generated and configured
+- [ ] Push notification permissions working
+- [ ] Daily scheduler running (10 AM IST)
+- [ ] Test notifications functional
+- [ ] Multi-device notifications working
 
 ### Monitoring
 - [ ] Render logs accessible

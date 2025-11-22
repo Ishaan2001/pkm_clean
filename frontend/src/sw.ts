@@ -52,3 +52,105 @@ self.addEventListener('message', (event) => {
   }
 });
 
+// Push notification event handlers
+self.addEventListener('push', (event) => {
+  log('Push notification received', event.data?.text());
+  
+  let notificationData = {
+    title: 'Knowledge Base',
+    body: 'You have a new reminder',
+    icon: '/icon-192.svg',
+    badge: '/icon-192.svg',
+    data: {
+      url: '/',
+      timestamp: new Date().toISOString()
+    },
+    actions: [
+      {
+        action: 'open',
+        title: 'Open Note'
+      },
+      {
+        action: 'dismiss', 
+        title: 'Dismiss'
+      }
+    ],
+    requireInteraction: false,
+    silent: false
+  };
+  
+  // Parse notification data if available
+  if (event.data) {
+    try {
+      const pushData = event.data.json();
+      notificationData = { ...notificationData, ...pushData };
+      log('Parsed push notification data', pushData);
+    } catch (error) {
+      log('Error parsing push notification data', error);
+    }
+  }
+  
+  event.waitUntil(
+    self.registration.showNotification(notificationData.title, {
+      body: notificationData.body,
+      icon: notificationData.icon,
+      badge: notificationData.badge,
+      data: notificationData.data,
+      actions: notificationData.actions,
+      requireInteraction: notificationData.requireInteraction,
+      silent: notificationData.silent,
+      tag: 'daily-note-reminder', // Prevents duplicate notifications
+      timestamp: new Date().getTime()
+    }).then(() => {
+      log('Push notification displayed successfully');
+    }).catch((error) => {
+      log('Error displaying push notification', error);
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  log('Notification clicked', { action: event.action, data: event.notification.data });
+  
+  event.notification.close();
+  
+  // Handle notification actions
+  if (event.action === 'dismiss') {
+    log('Notification dismissed by user');
+    return;
+  }
+  
+  // Default action or 'open' action - navigate to the note
+  const urlToOpen = event.notification.data?.url || '/';
+  
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        // Check if there's already a window/tab open with our app
+        for (const client of clientList) {
+          if (client.url.includes(self.location.origin)) {
+            // Focus the existing window and navigate to the note
+            client.navigate(urlToOpen);
+            return client.focus();
+          }
+        }
+        
+        // No existing window found, open a new one
+        return clients.openWindow(urlToOpen);
+      })
+      .then(() => {
+        log('Navigation completed after notification click');
+      })
+      .catch((error) => {
+        log('Error handling notification click', error);
+      })
+  );
+});
+
+self.addEventListener('notificationclose', (event) => {
+  log('Notification closed', event.notification.data);
+  
+  // Track notification close events for analytics if needed
+  // You could send this data to your analytics service
+});
+

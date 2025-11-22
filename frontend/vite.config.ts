@@ -7,9 +7,16 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      registerType: 'autoUpdate',
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
+      base: '/',
+      devOptions: {
+        enabled: true,
+        type: 'module',
+        navigateFallback: 'index.html'
+      },
       includeAssets: ['icon-192.svg', 'icon-512.svg'],
       manifest: {
         name: 'Knowledge Base PWA',

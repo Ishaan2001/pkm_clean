@@ -4,11 +4,12 @@ from sqlalchemy.orm import Session
 from typing import List
 import logging
 import os
+import json
 from pydantic import BaseModel
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from . import schemas
-from .database import get_db, init_db, Note, Notebook, User
+from .database import get_db, init_db, Note, Notebook, User, PushSubscription
 from .ai_service import summarize_note
 from .auth import (
     authenticate_user, 
@@ -17,6 +18,7 @@ from .auth import (
     get_current_active_user,
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
+from .scheduler import notification_scheduler
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -54,6 +56,13 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event():
     init_db()
+    # Start the notification scheduler
+    notification_scheduler.start()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    # Stop the notification scheduler
+    notification_scheduler.stop()
 
 async def generate_summary_task(note_id: int, content: str, db: Session):
     """Background task to generate AI summary"""
@@ -426,6 +435,195 @@ async def search_notes(
     ).all()
     
     return {"notes": notes, "total_count": len(notes)}
+
+# Push Notification endpoints
+@app.post("/api/push/subscribe", response_model=schemas.PushSubscriptionResponse)
+async def subscribe_to_push_notifications(
+    subscription_data: schemas.PushSubscriptionCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Subscribe user's device for push notifications"""
+    try:
+        # Check if this endpoint is already subscribed for this user
+        existing_sub = db.query(PushSubscription).filter(
+            PushSubscription.endpoint == subscription_data.endpoint,
+            PushSubscription.user_id == current_user.id
+        ).first()
+
+        if existing_sub:
+            # Update existing subscription with new keys (in case they changed)
+            existing_sub.p256dh_key = subscription_data.keys.p256dh
+            existing_sub.auth_key = subscription_data.keys.auth
+            existing_sub.user_agent = subscription_data.user_agent
+            db.commit()
+            db.refresh(existing_sub)
+            
+            logger.info(f"Updated push subscription for user {current_user.email}")
+            return schemas.PushSubscriptionResponse(
+                message="Push notifications updated successfully",
+                subscription_id=existing_sub.id
+            )
+        
+        # Create new subscription
+        new_subscription = PushSubscription(
+            user_id=current_user.id,
+            endpoint=subscription_data.endpoint,
+            p256dh_key=subscription_data.keys.p256dh,
+            auth_key=subscription_data.keys.auth,
+            user_agent=subscription_data.user_agent
+        )
+        
+        db.add(new_subscription)
+        db.commit()
+        db.refresh(new_subscription)
+        
+        logger.info(f"Created new push subscription for user {current_user.email}")
+        return schemas.PushSubscriptionResponse(
+            message="Push notifications enabled successfully",
+            subscription_id=new_subscription.id
+        )
+        
+    except Exception as e:
+        logger.error(f"Failed to subscribe user {current_user.email} to push notifications: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to enable push notifications"
+        )
+
+@app.delete("/api/push/unsubscribe")
+async def unsubscribe_from_push_notifications(
+    endpoint: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Unsubscribe user's device from push notifications"""
+    subscription = db.query(PushSubscription).filter(
+        PushSubscription.endpoint == endpoint,
+        PushSubscription.user_id == current_user.id
+    ).first()
+    
+    if not subscription:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Subscription not found"
+        )
+    
+    db.delete(subscription)
+    db.commit()
+    
+    logger.info(f"Unsubscribed device from push notifications for user {current_user.email}")
+    return {"message": "Push notifications disabled successfully"}
+
+@app.get("/api/push/subscriptions")
+async def get_user_push_subscriptions(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get all push subscriptions for the current user"""
+    subscriptions = db.query(PushSubscription).filter(
+        PushSubscription.user_id == current_user.id
+    ).all()
+    
+    return {
+        "subscriptions": [
+            {
+                "id": sub.id,
+                "endpoint": sub.endpoint[:50] + "..." if len(sub.endpoint) > 50 else sub.endpoint,
+                "user_agent": sub.user_agent,
+                "created_at": sub.created_at
+            }
+            for sub in subscriptions
+        ],
+        "total_count": len(subscriptions)
+    }
+
+# Scheduler management endpoints (for debugging)
+@app.get("/api/push/scheduler/status")
+async def get_scheduler_status(
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get notification scheduler status (debug endpoint)"""
+    return notification_scheduler.get_status()
+
+@app.post("/api/push/test-notification")
+async def trigger_test_notification(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Send a test notification to the current logged-in user"""
+    from .notification_service import NotificationService
+    
+    try:
+        # Get user's push subscriptions
+        subscriptions = db.query(PushSubscription).filter(
+            PushSubscription.user_id == current_user.id
+        ).all()
+        
+        if not subscriptions:
+            raise HTTPException(
+                status_code=400,
+                detail="No push subscriptions found for your account. Please enable notifications first."
+            )
+        
+        # Get a random note from user for testing
+        user_note = db.query(Note).filter(
+            Note.user_id == current_user.id
+        ).first()
+        
+        if not user_note:
+            # Send generic test notification if no notes
+            notification_data = {
+                'title': 'Knowledge Base - Test Notification',
+                'body': f'Hello {current_user.first_name or "User"}! Push notifications are working correctly. 🎉',
+                'icon': '/icon-192.svg',
+                'badge': '/icon-192.svg',
+                'tag': 'test-notification',
+                'data': {
+                    'type': 'test',
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'user_id': current_user.id
+                }
+            }
+        else:
+            # Send test notification with actual note
+            notification_data = {
+                'title': 'Knowledge Base - Test Notification',
+                'body': f'Test note: {user_note.content[:100]}{"..." if len(user_note.content) > 100 else ""}',
+                'icon': '/icon-192.svg',
+                'badge': '/icon-192.svg',
+                'tag': 'test-notification',
+                'data': {
+                    'type': 'test',
+                    'noteId': user_note.id,
+                    'timestamp': datetime.utcnow().isoformat(),
+                    'user_id': current_user.id
+                }
+            }
+        
+        # Send notification to all user's devices
+        notifications_sent = 0
+        # Convert notification data to JSON string (required by send_push_notification)
+        notification_payload = json.dumps(notification_data)
+        
+        for subscription in subscriptions:
+            success = NotificationService.send_push_notification(subscription, notification_payload)
+            if success:
+                notifications_sent += 1
+        
+        return {
+            "message": f"Test notification sent successfully to {notifications_sent} device(s)",
+            "devices": len(subscriptions),
+            "successful": notifications_sent,
+            "user_email": current_user.email
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to send test notification to user {current_user.email}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to send test notification: {str(e)}"
+        )
 
 @app.get("/health")
 async def health_check():

@@ -13,6 +13,7 @@ class ApiError extends Error {
 
 interface RequestOptions extends RequestInit {
   requiresAuth?: boolean;
+  skipAutoRedirect?: boolean;
 }
 
 export class ApiService {
@@ -24,7 +25,7 @@ export class ApiService {
     };
   }
 
-  private async handleResponse<T>(response: Response): Promise<T> {
+  private async handleResponse<T>(response: Response, skipAutoRedirect = false): Promise<T> {
     if (!response.ok) {
       let errorMessage = 'An error occurred';
       
@@ -35,7 +36,7 @@ export class ApiService {
         errorMessage = response.statusText || errorMessage;
       }
 
-      if (response.status === 401) {
+      if (response.status === 401 && !skipAutoRedirect) {
         // Token expired or invalid, redirect to login
         localStorage.removeItem('token');
         window.location.href = '/login';
@@ -56,7 +57,7 @@ export class ApiService {
     endpoint: string, 
     options: RequestOptions = {}
   ): Promise<T> {
-    const { requiresAuth = true, ...fetchOptions } = options;
+    const { requiresAuth = true, skipAutoRedirect = false, ...fetchOptions } = options;
 
     const url = `${API_BASE_URL}${endpoint}`;
     
@@ -67,7 +68,7 @@ export class ApiService {
 
     try {
       const response = await fetch(url, config);
-      return await this.handleResponse<T>(response);
+      return await this.handleResponse<T>(response, skipAutoRedirect);
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
@@ -77,28 +78,30 @@ export class ApiService {
   }
 
   // Convenience methods
-  get<T>(endpoint: string, requiresAuth = true): Promise<T> {
-    return this.request<T>(endpoint, { method: 'GET', requiresAuth });
+  get<T>(endpoint: string, requiresAuth = true, skipAutoRedirect = false): Promise<T> {
+    return this.request<T>(endpoint, { method: 'GET', requiresAuth, skipAutoRedirect });
   }
 
-  post<T>(endpoint: string, data?: any, requiresAuth = true): Promise<T> {
+  post<T>(endpoint: string, data?: any, requiresAuth = true, skipAutoRedirect = false): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
       requiresAuth,
+      skipAutoRedirect,
     });
   }
 
-  put<T>(endpoint: string, data?: any, requiresAuth = true): Promise<T> {
+  put<T>(endpoint: string, data?: any, requiresAuth = true, skipAutoRedirect = false): Promise<T> {
     return this.request<T>(endpoint, {
       method: 'PUT',
       body: data ? JSON.stringify(data) : undefined,
       requiresAuth,
+      skipAutoRedirect,
     });
   }
 
-  delete<T>(endpoint: string, requiresAuth = true): Promise<T> {
-    return this.request<T>(endpoint, { method: 'DELETE', requiresAuth });
+  delete<T>(endpoint: string, requiresAuth = true, skipAutoRedirect = false): Promise<T> {
+    return this.request<T>(endpoint, { method: 'DELETE', requiresAuth, skipAutoRedirect });
   }
 }
 

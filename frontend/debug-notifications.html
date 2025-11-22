@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Notifications</title>
+</head>
+<body>
+    <h1>Notification Debug Test</h1>
+    <div id="results"></div>
+    <button onclick="testNotificationFlow()">Test Notification Flow</button>
+    
+    <script>
+        const VAPID_PUBLIC_KEY = 'BNGxZ-dyO-8AIad-E4R-_-sYA9estiVFy6bdPXhSgzmfCcCxqPFHw74GMOoRkhLqRW_rZDqumFXQujhGo0l-7a4';
+        const API_URL = 'http://localhost:8000';
+        
+        function log(message, data) {
+            console.log(message, data);
+            const div = document.getElementById('results');
+            div.innerHTML += `<p><strong>${message}</strong>: ${JSON.stringify(data)}</p>`;
+        }
+        
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/-/g, '+')
+                .replace(/_/g, '/');
+            
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            
+            return outputArray;
+        }
+        
+        async function testNotificationFlow() {
+            try {
+                document.getElementById('results').innerHTML = '';
+                
+                log('Step 1: Check support', {
+                    serviceWorker: 'serviceWorker' in navigator,
+                    pushManager: 'PushManager' in window,
+                    notification: 'Notification' in window
+                });
+                
+                log('Step 2: Current permission', Notification.permission);
+                
+                if (Notification.permission !== 'granted') {
+                    log('Step 3: Requesting permission...');
+                    const permission = await Notification.requestPermission();
+                    log('Step 3 result', permission);
+                    
+                    if (permission !== 'granted') {
+                        log('ERROR', 'Permission denied');
+                        return;
+                    }
+                }
+                
+                log('Step 4: Getting service worker registration...');
+                const registration = await navigator.serviceWorker.ready;
+                log('Step 4 result', {
+                    scope: registration.scope,
+                    active: !!registration.active
+                });
+                
+                log('Step 5: Converting VAPID key...');
+                const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+                log('Step 5 result', { keyLength: applicationServerKey.length });
+                
+                log('Step 6: Creating push subscription...');
+                const subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: applicationServerKey
+                });
+                log('Step 6 result', {
+                    endpoint: subscription.endpoint.substring(0, 50) + '...',
+                    hasKeys: !!subscription.toJSON().keys
+                });
+                
+                log('Step 7: Preparing data for backend...');
+                const subscriptionJson = subscription.toJSON();
+                const subscriptionData = {
+                    endpoint: subscription.endpoint,
+                    keys: {
+                        p256dh: subscriptionJson.keys.p256dh,
+                        auth: subscriptionJson.keys.auth
+                    },
+                    user_agent: navigator.userAgent
+                };
+                
+                log('Step 8: Making API call to backend...');
+                const response = await fetch(`${API_URL}/api/push/subscribe`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer YOUR_TOKEN_HERE' // Need to get real token
+                    },
+                    body: JSON.stringify(subscriptionData)
+                });
+                
+                log('Step 8 result', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    log('SUCCESS', result);
+                } else {
+                    const errorText = await response.text();
+                    log('API ERROR', errorText);
+                }
+                
+            } catch (error) {
+                log('CAUGHT ERROR', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                });
+            }
+        }
+    </script>
+</body>
+</html>
