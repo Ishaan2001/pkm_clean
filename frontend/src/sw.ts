@@ -82,8 +82,7 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification('Knowledge Base', {
       ...notificationData,
-      tag: 'daily-note-reminder', // Prevents duplicate notifications
-      timestamp: new Date().getTime()
+      tag: 'daily-note-reminder' // Prevents duplicate notifications
     }).then(() => {
       log('Push notification displayed successfully');
     }).catch((error) => {

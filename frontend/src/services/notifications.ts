@@ -199,7 +199,7 @@ class NotificationService {
       const applicationServerKey = this.urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: applicationServerKey.buffer
+        applicationServerKey: applicationServerKey as unknown as ArrayBuffer
       });
       console.log('✅ Push subscription created successfully');
 
