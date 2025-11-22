@@ -56,8 +56,7 @@ self.addEventListener('message', (event) => {
 self.addEventListener('push', (event) => {
   log('Push notification received', event.data?.text());
   
-  let notificationData = {
-    title: 'Knowledge Base',
+  let notificationData: NotificationOptions = {
     body: 'You have a new reminder',
     icon: '/icon-192.svg',
     badge: '/icon-192.svg',
@@ -65,16 +64,6 @@ self.addEventListener('push', (event) => {
       url: '/',
       timestamp: new Date().toISOString()
     },
-    actions: [
-      {
-        action: 'open',
-        title: 'Open Note'
-      },
-      {
-        action: 'dismiss', 
-        title: 'Dismiss'
-      }
-    ],
     requireInteraction: false,
     silent: false
   };
@@ -91,14 +80,8 @@ self.addEventListener('push', (event) => {
   }
   
   event.waitUntil(
-    self.registration.showNotification(notificationData.title, {
-      body: notificationData.body,
-      icon: notificationData.icon,
-      badge: notificationData.badge,
-      data: notificationData.data,
-      actions: notificationData.actions,
-      requireInteraction: notificationData.requireInteraction,
-      silent: notificationData.silent,
+    self.registration.showNotification('Knowledge Base', {
+      ...notificationData,
       tag: 'daily-note-reminder', // Prevents duplicate notifications
       timestamp: new Date().getTime()
     }).then(() => {
@@ -124,8 +107,8 @@ self.addEventListener('notificationclick', (event) => {
   const urlToOpen = event.notification.data?.url || '/';
   
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then((clientList) => {
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList: readonly WindowClient[]) => {
         // Check if there's already a window/tab open with our app
         for (const client of clientList) {
           if (client.url.includes(self.location.origin)) {
@@ -136,12 +119,12 @@ self.addEventListener('notificationclick', (event) => {
         }
         
         // No existing window found, open a new one
-        return clients.openWindow(urlToOpen);
+        return self.clients.openWindow(urlToOpen);
       })
       .then(() => {
         log('Navigation completed after notification click');
       })
-      .catch((error) => {
+      .catch((error: any) => {
         log('Error handling notification click', error);
       })
   );
