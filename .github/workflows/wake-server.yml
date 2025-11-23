@@ -3,7 +3,7 @@ name: Wake Render Server for Daily Notifications
 on:
   schedule:
     # Run at 9:45 AM IST (4:15 AM UTC) every day with 8-minute keep-alive loop
-    - cron: '15 4 * * *'
+    - cron: '15 19 * * *'
   workflow_dispatch: # Allow manual triggering for testing
 
 jobs:
