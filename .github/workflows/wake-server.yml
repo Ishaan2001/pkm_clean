@@ -2,8 +2,8 @@ name: Wake Render Server for Daily Notifications
 
 on:
   schedule:
-    # Run at 9:55 AM IST (4:25 AM UTC) every day
-    - cron: '25 17 * * *'
+    # Run at 9:45 AM IST (4:15 AM UTC) every day with 8-minute keep-alive loop
+    - cron: '15 4 * * *'
   workflow_dispatch: # Allow manual triggering for testing
 
 jobs:
@@ -11,38 +11,49 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Wake up Render server
+    - name: Wake up and keep Render server alive
       run: |
-        echo "Attempting to wake up Render server at $(date)"
+        echo "🚀 Starting server wake-up and keep-alive sequence at $(date)"
         
-        # Try multiple approaches to ensure server wakes up
+        # Function to hit server and verify it's awake
+        check_server() {
+          echo "⏰ Pinging server at $(date)"
+          curl -X GET "https://pkm-clean.onrender.com/api/wake-server" \
+            --max-time 30 \
+            --silent \
+            --write-out "HTTP Status: %{http_code}, Response Time: %{time_total}s\n" \
+            || echo "❌ Request failed"
+        }
         
-        # First attempt - main endpoint
-        echo "Trying main wake endpoint..."
+        # Initial wake-up with longer timeout
+        echo "🌅 Initial server wake-up attempt..."
         curl -X GET "https://pkm-clean.onrender.com/api/wake-server" \
           --max-time 120 \
           --retry 3 \
           --retry-delay 10 \
-          --retry-max-time 180 \
           --connect-timeout 30 \
-          -v || echo "First attempt failed, continuing..."
+          -v || echo "⚠️ Initial wake-up had issues, continuing with keep-alive..."
         
-        # Wait a bit for server to start
-        echo "Waiting 30 seconds for server startup..."
-        sleep 30
+        echo "✅ Server should be starting up, beginning keep-alive loop..."
         
-        # Second attempt - verify server is awake
-        echo "Verifying server is awake..."
-        curl -X GET "https://pkm-clean.onrender.com/health" \
-          --max-time 60 \
-          --retry 2 \
-          --retry-delay 5 \
-          -v || echo "Health check failed"
+        # Keep-alive loop: Hit server every 60 seconds for 8 minutes
+        # This ensures server stays awake regardless of when GitHub Actions actually started
+        for i in {1..8}; do
+          echo "🔄 Keep-alive ping #$i of 8"
+          check_server
+          
+          # Don't sleep after the last iteration
+          if [ $i -lt 8 ]; then
+            echo "💤 Waiting 60 seconds before next ping..."
+            sleep 60
+          fi
+        done
         
-        # Third attempt - hit scheduler status
-        echo "Checking scheduler status..."
+        # Final verification that scheduler is ready
+        echo "🎯 Final verification - checking notification scheduler status..."
         curl -X GET "https://pkm-clean.onrender.com/api/push/scheduler/status" \
-          --max-time 60 \
-          -v || echo "Scheduler status check failed"
+          --max-time 30 \
+          -v || echo "⚠️ Scheduler status check failed"
         
-        echo "Wake-up sequence completed at $(date)"
+        echo "🏁 Keep-alive sequence completed at $(date)"
+        echo "📱 Server should remain active for 10 AM IST notifications"
