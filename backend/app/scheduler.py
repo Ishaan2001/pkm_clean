@@ -30,7 +30,7 @@ class NotificationScheduler:
             self.scheduler.add_job(
                 func=NotificationService.send_daily_notifications,
                 trigger=CronTrigger(
-                    hour=10,  # 10 AM
+                    hour=1,  # 10 AM
                     minute=0,  # At the top of the hour
                     timezone=INDIAN_TZ
                 ),
