@@ -668,3 +668,9 @@ async def wake_server():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.get("/api/minimal-wake")
+async def minimal_wake():
+    """Ultra-minimal endpoint for cron-job.org with size restrictions"""
+    logger.info("Minimal wake-up triggered by external cron service")
+    return "OK"
