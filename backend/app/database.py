@@ -15,12 +15,22 @@ SQLALCHEMY_DATABASE_URL = DATABASE_URL or "sqlite:///./notes.db"
 # PostgreSQL requires standard arguments, SQLite requires 'check_same_thread'
 if "postgresql" in SQLALCHEMY_DATABASE_URL or "postgres" in SQLALCHEMY_DATABASE_URL:
     connect_args = {"sslmode": "require"} if "supabase" in SQLALCHEMY_DATABASE_URL else {}
+    # Add connection pooling and retry settings for PostgreSQL
+    engine = create_engine(
+        SQLALCHEMY_DATABASE_URL, 
+        connect_args=connect_args,
+        pool_size=5,                    # Number of connections to maintain
+        max_overflow=10,                # Additional connections beyond pool_size
+        pool_recycle=3600,              # Recycle connections after 1 hour
+        pool_pre_ping=True,             # Validate connections before use
+        pool_reset_on_return='commit'   # Reset connection state on return
+    )
 elif "sqlite" in SQLALCHEMY_DATABASE_URL:
     connect_args = {"check_same_thread": False}
+    engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args=connect_args)
 else:
     connect_args = {}
-
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args=connect_args)
+    engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args=connect_args)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

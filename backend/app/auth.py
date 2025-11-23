@@ -5,8 +5,13 @@ from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import OperationalError, DisconnectionError
 from .database import get_db, User
 import os
+import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 # JWT Settings
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-here-change-in-production")
@@ -63,7 +68,7 @@ def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ) -> User:
-    """Get current authenticated user from JWT token."""
+    """Get current authenticated user from JWT token with database retry logic."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -77,11 +82,33 @@ def get_current_user(
     except JWTError:
         raise credentials_exception
     
-    user = db.query(User).filter(User.email == email).first()
-    if user is None:
-        raise credentials_exception
+    # Retry database operations in case of connection issues
+    max_retries = 3
+    retry_delay = 1  # seconds
     
-    return user
+    for attempt in range(max_retries):
+        try:
+            user = db.query(User).filter(User.email == email).first()
+            if user is None:
+                raise credentials_exception
+            return user
+            
+        except (OperationalError, DisconnectionError) as e:
+            logger.warning(f"Database connection error on attempt {attempt + 1}/{max_retries}: {e}")
+            
+            if attempt == max_retries - 1:  # Last attempt
+                logger.error(f"Database connection failed after {max_retries} attempts. User authentication failed for {email}")
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Database temporarily unavailable. Please try again in a moment."
+                )
+            
+            # Wait before retrying
+            time.sleep(retry_delay * (attempt + 1))  # Exponential backoff
+            
+        except Exception as e:
+            logger.error(f"Unexpected error during user authentication: {e}")
+            raise credentials_exception
 
 def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
     """Get current active user."""
