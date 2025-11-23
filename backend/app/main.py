@@ -6,7 +6,7 @@ import logging
 import os
 import json
 from pydantic import BaseModel
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 
 from . import schemas
 from .database import get_db, init_db, Note, Notebook, User, PushSubscription
@@ -624,6 +624,46 @@ async def trigger_test_notification(
             status_code=500,
             detail=f"Failed to send test notification: {str(e)}"
         )
+
+@app.get("/api/wake-server")
+async def wake_server():
+    """
+    Public endpoint to wake up the server from Render sleep mode.
+    Designed to be called by external cron services at 9:55 AM IST.
+    Does NOT send notifications - just ensures server is awake for the 10 AM scheduler.
+    """
+    try:
+        # Log the wake-up call
+        current_time = datetime.utcnow()
+        ist_time = current_time.replace(tzinfo=timezone.utc).astimezone(
+            timezone(timedelta(hours=5, minutes=30))  # IST offset
+        )
+        
+        logger.info(f"Server wake-up triggered by external cron service at {ist_time.strftime('%Y-%m-%d %H:%M:%S IST')}")
+        
+        # Get scheduler status to confirm it's running
+        scheduler_status = notification_scheduler.get_status()
+        
+        # Return comprehensive status to confirm server is fully awake
+        return {
+            "status": "awake",
+            "message": "Server successfully awakened by external cron service",
+            "current_time_utc": current_time.isoformat(),
+            "current_time_ist": ist_time.strftime('%Y-%m-%d %H:%M:%S IST'),
+            "scheduler_status": scheduler_status,
+            "purpose": "Ensuring server is awake for 10 AM IST daily notification scheduler",
+            "next_notification_time": "10:00 AM IST (internal scheduler will handle)",
+            "triggered_by": "external_cron_service"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in wake-server endpoint: {e}")
+        # Still return success to ensure external cron service knows server is awake
+        return {
+            "status": "awake_with_warning", 
+            "message": f"Server awake but encountered minor issue: {str(e)}",
+            "current_time_utc": datetime.utcnow().isoformat()
+        }
 
 @app.get("/health")
 async def health_check():

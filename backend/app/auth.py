@@ -11,7 +11,7 @@ import os
 # JWT Settings
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-here-change-in-production")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 24 * 60  # 24 hours
+ACCESS_TOKEN_EXPIRE_MINUTES = 180 * 24 * 60  # 180 days (6 months)
 
 # Password hashing - using pbkdf2_sha256 as fallback for bcrypt compatibility issues
 pwd_context = CryptContext(schemes=["pbkdf2_sha256", "bcrypt"], deprecated="auto")
