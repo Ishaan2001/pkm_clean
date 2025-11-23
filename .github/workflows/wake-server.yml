@@ -1,0 +1,48 @@
+name: Wake Render Server for Daily Notifications
+
+on:
+  schedule:
+    # Run at 9:55 AM IST (4:25 AM UTC) every day
+    - cron: '25 4 * * *'
+  workflow_dispatch: # Allow manual triggering for testing
+
+jobs:
+  wake-server:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Wake up Render server
+      run: |
+        echo "Attempting to wake up Render server at $(date)"
+        
+        # Try multiple approaches to ensure server wakes up
+        
+        # First attempt - main endpoint
+        echo "Trying main wake endpoint..."
+        curl -X GET "https://pkm-clean.onrender.com/api/wake-server" \
+          --max-time 120 \
+          --retry 3 \
+          --retry-delay 10 \
+          --retry-max-time 180 \
+          --connect-timeout 30 \
+          -v || echo "First attempt failed, continuing..."
+        
+        # Wait a bit for server to start
+        echo "Waiting 30 seconds for server startup..."
+        sleep 30
+        
+        # Second attempt - verify server is awake
+        echo "Verifying server is awake..."
+        curl -X GET "https://pkm-clean.onrender.com/health" \
+          --max-time 60 \
+          --retry 2 \
+          --retry-delay 5 \
+          -v || echo "Health check failed"
+        
+        # Third attempt - hit scheduler status
+        echo "Checking scheduler status..."
+        curl -X GET "https://pkm-clean.onrender.com/api/push/scheduler/status" \
+          --max-time 60 \
+          -v || echo "Scheduler status check failed"
+        
+        echo "Wake-up sequence completed at $(date)"
