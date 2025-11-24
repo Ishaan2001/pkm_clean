@@ -1,19 +1,19 @@
-name: Wake Render Server for Daily Notifications
+name: Send Daily Push Notifications
 
 on:
   schedule:
-    # Run at 9:45 AM IST (4:15 AM UTC) every day with 8-minute keep-alive loop
-    - cron: '15 4 * * *'
+    # Run at 10:00 AM IST (4:30 AM UTC) every day - direct notification trigger
+    - cron: '30 4 * * *'
   workflow_dispatch: # Allow manual triggering for testing
 
 jobs:
-  wake-server:
+  send-notifications:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Wake up and keep Render server alive
+    - name: Wake server and trigger daily notifications
       run: |
-        echo "🚀 Starting server wake-up and keep-alive sequence at $(date)"
+        echo "🚀 Starting server wake-up and direct notification trigger at $(date)"
         
         # Function to hit server and verify it's awake
         check_server() {
@@ -49,11 +49,13 @@ jobs:
           fi
         done
         
-        # Final verification that scheduler is ready
-        echo "🎯 Final verification - checking notification scheduler status..."
-        curl -X GET "https://pkm-clean.onrender.com/api/push/scheduler/status" \
-          --max-time 30 \
-          -v || echo "⚠️ Scheduler status check failed"
+        # Instead of relying on internal scheduler, directly trigger notifications
+        echo "🎯 Directly triggering daily notifications via API..."
+        curl -X POST "https://pkm-clean.onrender.com/api/push/send-daily-notifications" \
+          --max-time 60 \
+          --header "Content-Type: application/json" \
+          --write-out "HTTP Status: %{http_code}, Response Time: %{time_total}s\\n" \
+          -v || echo "⚠️ Direct notification trigger failed"
         
-        echo "🏁 Keep-alive sequence completed at $(date)"
-        echo "📱 Server should remain active for 10 AM IST notifications"
+        echo "🏁 Notification trigger sequence completed at $(date)"
+        echo "📱 Notifications sent directly via GitHub Actions (bypassing internal scheduler)"

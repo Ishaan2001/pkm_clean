@@ -56,13 +56,16 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event():
     init_db()
+    # COMMENTED OUT: Internal scheduler replaced by GitHub Actions direct trigger
     # Start the notification scheduler
-    notification_scheduler.start()
+    # notification_scheduler.start()
 
 @app.on_event("shutdown")
 async def shutdown_event():
+    # COMMENTED OUT: Internal scheduler replaced by GitHub Actions direct trigger
     # Stop the notification scheduler
-    notification_scheduler.stop()
+    # notification_scheduler.stop()
+    pass
 
 async def generate_summary_task(note_id: int, content: str, db: Session):
     """Background task to generate AI summary"""
@@ -544,7 +547,11 @@ async def get_scheduler_status(
     current_user: User = Depends(get_current_active_user)
 ):
     """Get notification scheduler status (debug endpoint)"""
-    return notification_scheduler.get_status()
+    return {
+        "status": "disabled",
+        "message": "Internal scheduler disabled - using GitHub Actions direct trigger",
+        "trigger_method": "github_actions_direct_api_call"
+    }
 
 @app.post("/api/push/test-notification")
 async def trigger_test_notification(
@@ -674,3 +681,40 @@ async def minimal_wake():
     """Ultra-minimal endpoint for cron-job.org with size restrictions"""
     logger.info("Minimal wake-up triggered by external cron service")
     return "OK"
+
+@app.post("/api/push/send-daily-notifications")
+async def trigger_daily_notifications():
+    """
+    Direct endpoint to trigger daily notifications.
+    Called by GitHub Actions instead of relying on internal scheduler.
+    This ensures notifications are sent even if GitHub Actions runs late.
+    """
+    from .notification_service import NotificationService
+    
+    try:
+        # Log the trigger time
+        current_time = datetime.utcnow()
+        ist_time = current_time.replace(tzinfo=timezone.utc).astimezone(
+            timezone(timedelta(hours=5, minutes=30))  # IST offset
+        )
+        
+        logger.info(f"Daily notifications triggered by GitHub Actions at {ist_time.strftime('%Y-%m-%d %H:%M:%S IST')}")
+        
+        # Directly trigger the notification sending
+        NotificationService.send_daily_notifications()
+        
+        return {
+            "status": "success",
+            "message": "Daily notifications sent successfully",
+            "triggered_at_utc": current_time.isoformat(),
+            "triggered_at_ist": ist_time.strftime('%Y-%m-%d %H:%M:%S IST'),
+            "triggered_by": "github_actions_direct_trigger"
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to send daily notifications via GitHub Actions trigger: {e}")
+        return {
+            "status": "error",
+            "message": f"Failed to send daily notifications: {str(e)}",
+            "triggered_at_utc": datetime.utcnow().isoformat()
+        }
