@@ -1,17 +1,25 @@
 # Knowledge Base PWA
 
-A secure, multi-user note-taking Progressive Web App with AI-powered summaries, user authentication, and notebooks organization. Built with React + TypeScript frontend and FastAPI + Python backend.
+A secure, multi-user note-taking Progressive Web App with AI-powered summaries, daily push notifications, and user authentication. Built with React + TypeScript frontend and FastAPI + Python backend.
 
 ## ✨ Current Features
 
+### 🔔 Push Notifications
+- **Daily notifications** at 10 AM IST with personalized note reminders
+- **Round-robin note selection** - each user gets different notes each day
+- **Multi-device support** - notifications work across phones, tablets, laptops
+- **Web Push API** with VAPID authentication for browser notifications
+- **GitHub Actions scheduling** with direct API triggering for reliability
+- **User isolation** - each user gets their own notification sequence
+
 ### 🔐 User Authentication & Security
 - **User registration** with email and password (no email verification required)
-- **Secure login** with JWT token-based authentication (24-hour expiration)
+- **Secure login** with JWT token-based authentication (180-day expiration)
 - **User isolation** - complete data separation between users
 - **Logout functionality** with user dropdown menu in page headers
 - **Password hashing** using pbkdf2_sha256 for security
 - **Protected routes** - all pages require authentication
-- **Migration support** - existing data preserved for admin user
+- **Database resilience** with connection pooling and retry logic
 
 ### 📝 Note Management  
 - **Create notes** with floating action button (+)
@@ -78,9 +86,10 @@ A secure, multi-user note-taking Progressive Web App with AI-powered summaries, 
 
 ### Backend (`/backend/`)
 - **FastAPI** with Python 3.13 and Uvicorn server
-- **SQLAlchemy 2.0+** ORM with SQLite database
+- **SQLAlchemy 2.0+** ORM with PostgreSQL (Supabase) database
 - **google-generativeai 0.3+** for AI summarization
-- **CORS enabled** for localhost:5173/5174 development
+- **pywebpush** for Web Push API notifications
+- **CORS enabled** for localhost:5173/5174 development and Vercel production
 
 ## 🗄️ Database Schema
 
@@ -134,6 +143,21 @@ CREATE TABLE note_notebooks (
 );
 ```
 
+### Push Subscriptions Table
+```sql
+CREATE TABLE push_subscriptions (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    endpoint VARCHAR NOT NULL UNIQUE,
+    p256dh_key VARCHAR NOT NULL,
+    auth_key VARCHAR NOT NULL,
+    user_agent VARCHAR,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+);
+```
+
 
 ## 🚀 Setup & Development
 
@@ -141,6 +165,8 @@ CREATE TABLE note_notebooks (
 - Python 3.13+
 - Node.js 18+
 - Google Gemini API Key
+- VAPID Keys for push notifications
+- PostgreSQL database (Supabase recommended)
 
 ### Backend Setup
 ```bash
@@ -150,7 +176,14 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Create environment file
-echo "GEMINI_API_KEY=your_api_key_here" > .env
+cat > .env << EOF
+GEMINI_API_KEY=your_api_key_here
+DATABASE_URL=postgresql://user:pass@host:port/dbname
+VAPID_PUBLIC_KEY=your_vapid_public_key
+VAPID_PRIVATE_KEY=your_vapid_private_key
+VAPID_SUBJECT=mailto:support@example.com
+JWT_SECRET_KEY=your_secret_key
+EOF
 
 # Run migration script (for existing installations)
 python migrate_to_multiuser.py
@@ -164,6 +197,10 @@ python main.py
 ```bash
 cd frontend
 npm install
+
+# Create environment file
+echo "VITE_VAPID_PUBLIC_KEY=your_vapid_public_key" > .env
+
 npm run dev
 ```
 **Frontend runs on**: http://localhost:5173
@@ -210,10 +247,18 @@ python migrate_to_multiuser.py
 ### Search API (Protected - requires authentication)
 - `GET /api/search?q={query}` - Search user's notes by content and AI summaries
 
+### Push Notifications API (Protected - requires authentication)
+- `POST /api/push/subscribe` - Register device for push notifications
+- `DELETE /api/push/unsubscribe` - Remove device from notifications
+- `GET /api/push/subscriptions` - List user's subscribed devices
+- `POST /api/push/test-notification` - Send test notification to current user
+- `POST /api/push/send-daily-notifications` - Trigger daily notifications (GitHub Actions)
 
 ### Health/Status
 - `GET /` - API status message
 - `GET /health` - Health check endpoint
+- `GET /api/wake-server` - Wake server from sleep (external services)
+- `GET /api/push/scheduler/status` - Notification scheduler status
 
 
 ## 🎨 Styling System
@@ -252,11 +297,15 @@ python migrate_to_multiuser.py
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
 sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0
 google-generativeai>=0.3.0
 python-dotenv>=1.0.0
 python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4
 email-validator>=2.0.0
+pywebpush==1.14.0
+APScheduler==3.10.4
+pytz==2023.3
 ```
 
 ## 🔧 Development Commands
@@ -276,29 +325,38 @@ npm run lint
 ## 📊 Current Status
 
 **✅ Fully Functional Features:**
-- **User Authentication**: JWT-based signup/login with user isolation
+- **Push Notifications**: Daily reminders at 10 AM IST with round-robin note selection
+- **User Authentication**: JWT-based signup/login with 180-day sessions and user isolation
 - **Notes Management**: Create, edit, delete, view with AI summaries
 - **Notebooks Organization**: Many-to-many relationships with batch operations
 - **Search System**: Real-time keyword search with highlighting
 - **Bottom Navigation**: Three-tab navigation system
 - **Multi-select Operations**: Batch add/remove notes from notebooks
-- **PWA Functionality**: Installable with service worker
+- **PWA Functionality**: Installable with service worker and push notifications
 - **Dark Theme UI**: Complete orange-accent design system
-- **User Security**: Complete data separation between users
+- **Multi-device Support**: Notifications work across phones, tablets, laptops
 
-**Database**: Multi-user with users, notes, and notebooks  
-**Backend**: FastAPI with SQLAlchemy ORM and JWT auth  
-**Frontend**: React 19 with TypeScript, protected routes, and Tailwind CSS  
+**Database**: PostgreSQL (Supabase) with users, notes, notebooks, push_subscriptions  
+**Backend**: FastAPI with SQLAlchemy ORM, JWT auth, Web Push API  
+**Frontend**: React 19 with TypeScript, service worker, push notifications  
 **AI Integration**: Google Gemini API for note summarization  
+**Scheduling**: GitHub Actions for reliable daily notification delivery  
 
 ## 🔍 Known Behavior
 
 ### Authentication Flow
 - **Public routes**: `/login` and `/signup` pages (no authentication required)
 - **Protected routes**: All other pages require valid JWT token
-- **Token expiration**: 24-hour token lifespan with automatic logout
+- **Token expiration**: 180-day token lifespan for persistent sessions
 - **User isolation**: Complete data separation - users only see their own content
 - **Logout functionality**: Available via user dropdown in page headers
+
+### Push Notifications
+- **Daily delivery**: 10 AM IST via GitHub Actions direct API trigger
+- **Round-robin selection**: Each user gets different notes each day based on day of year
+- **Multi-device sync**: Same note delivered to all user's subscribed devices
+- **Web Push API**: Browser-native notifications with VAPID authentication
+- **Subscription management**: Users can enable/disable notifications per device
 
 
 ### AI Processing
@@ -331,4 +389,4 @@ npm run lint
 
 ---
 
-**A comprehensive knowledge management PWA with AI-powered insights and flexible organization.**
+**A comprehensive knowledge management PWA with AI-powered insights, daily push notifications, and flexible organization.**
