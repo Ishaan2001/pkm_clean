@@ -11,51 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Wake server and trigger daily notifications
+    - name: Send daily notifications
       run: |
-        echo "🚀 Starting server wake-up and direct notification trigger at $(date)"
+        # Wake server
+        curl -X GET "https://pkm-clean.onrender.com/api/wake-server" --max-time 120 --retry 3 --retry-delay 10
         
-        # Function to hit server and verify it's awake
-        check_server() {
-          echo "⏰ Pinging server at $(date)"
-          curl -X GET "https://pkm-clean.onrender.com/api/wake-server" \
-            --max-time 30 \
-            --silent \
-            --write-out "HTTP Status: %{http_code}, Response Time: %{time_total}s\n" \
-            || echo "❌ Request failed"
-        }
-        
-        # Initial wake-up with longer timeout
-        echo "🌅 Initial server wake-up attempt..."
-        curl -X GET "https://pkm-clean.onrender.com/api/wake-server" \
-          --max-time 120 \
-          --retry 3 \
-          --retry-delay 10 \
-          --connect-timeout 30 \
-          -v || echo "⚠️ Initial wake-up had issues, continuing with keep-alive..."
-        
-        echo "✅ Server should be starting up, beginning keep-alive loop..."
-        
-        # Keep-alive loop: Hit server every 60 seconds for 8 minutes
-        # This ensures server stays awake regardless of when GitHub Actions actually started
-        for i in {1..8}; do
-          echo "🔄 Keep-alive ping #$i of 8"
-          check_server
-          
-          # Don't sleep after the last iteration
-          if [ $i -lt 8 ]; then
-            echo "💤 Waiting 60 seconds before next ping..."
-            sleep 60
-          fi
-        done
-        
-        # Instead of relying on internal scheduler, directly trigger notifications
-        echo "🎯 Directly triggering daily notifications via API..."
-        curl -X POST "https://pkm-clean.onrender.com/api/push/send-daily-notifications" \
-          --max-time 60 \
-          --header "Content-Type: application/json" \
-          --write-out "HTTP Status: %{http_code}, Response Time: %{time_total}s\\n" \
-          -v || echo "⚠️ Direct notification trigger failed"
-        
-        echo "🏁 Notification trigger sequence completed at $(date)"
-        echo "📱 Notifications sent directly via GitHub Actions (bypassing internal scheduler)"
+        # Trigger notifications
+        curl -X POST "https://pkm-clean.onrender.com/api/push/send-daily-notifications" --max-time 60
