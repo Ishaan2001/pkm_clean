@@ -174,7 +174,7 @@ async def get_notes(
     current_user: User = Depends(get_current_active_user)
 ):
     """Get all notes for current user"""
-    notes = db.query(Note).filter(Note.user_id == current_user.id).offset(skip).limit(limit).all()
+    notes = db.query(Note).filter(Note.user_id == current_user.id).order_by(Note.updated_at.desc()).offset(skip).limit(limit).all()
     return notes
 
 @app.get("/api/notes/{note_id}", response_model=schemas.Note)
@@ -244,6 +244,7 @@ async def get_notebooks(
         .filter(Notebook.user_id == current_user.id)
         .outerjoin(Notebook.notes)
         .group_by(Notebook.id)
+        .order_by(Notebook.updated_at.desc())
         .all()
     )
     
@@ -295,7 +296,20 @@ async def get_notebook(
     ).first()
     if notebook is None:
         raise HTTPException(status_code=404, detail="Notebook not found")
-    return notebook
+    
+    # Sort the notes by updated_at descending (newest first)
+    sorted_notes = sorted(notebook.notes, key=lambda note: note.updated_at, reverse=True)
+    
+    # Create a copy of the notebook with sorted notes
+    notebook_dict = {
+        "id": notebook.id,
+        "title": notebook.title,
+        "created_at": notebook.created_at,
+        "updated_at": notebook.updated_at,
+        "notes": sorted_notes
+    }
+    
+    return notebook_dict
 
 @app.put("/api/notebooks/{notebook_id}", response_model=schemas.Notebook)
 async def update_notebook(

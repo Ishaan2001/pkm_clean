@@ -177,11 +177,11 @@ const Notebooks: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {notebooks.map((notebook) => (
               <div
                 key={notebook.id}
-                className="bg-gray-900 border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-all duration-200 hover:shadow-lg group relative"
+                className="bg-gray-900 border border-gray-800 rounded-xl p-4 sm:p-6 hover:border-gray-700 transition-all duration-200 hover:shadow-lg group relative"
               >
                 {/* Three dots menu */}
                 <div className="absolute top-4 right-4 z-10">
@@ -261,15 +261,15 @@ const Notebooks: React.FC = () => {
                       />
                     </div>
                   ) : (
-                    <h3 className="text-lg font-semibold text-white mb-2 line-clamp-2 group-hover:text-orange-200 transition-colors pr-8">
+                    <h3 className="text-base sm:text-lg font-semibold text-white mb-2 line-clamp-2 group-hover:text-orange-200 transition-colors pr-8">
                       {notebook.title}
                     </h3>
                   )}
                   
                   <div className="mt-auto pt-4 border-t border-gray-800">
-                    <div className="flex items-center justify-between text-sm text-gray-400">
-                      <span>{notebook.note_count || 0} notes</span>
-                      <span>{formatDate(notebook.created_at)}</span>
+                    <div className="flex items-center justify-between text-xs sm:text-sm text-gray-400">
+                      <span className="flex-shrink-0">{notebook.note_count || 0} {notebook.note_count === 1 ? 'note' : 'notes'}</span>
+                      <span className="text-right min-w-0 truncate ml-2">{formatDate(notebook.created_at)}</span>
                     </div>
                   </div>
                 </div>

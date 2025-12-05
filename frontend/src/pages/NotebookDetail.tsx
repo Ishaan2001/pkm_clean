@@ -177,7 +177,7 @@ const NotebookDetail: React.FC = () => {
     <div className="min-h-screen bg-black pb-20">
       {/* Header */}
       <header className="bg-gray-900 border-b border-gray-800 sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-4 py-4">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => navigate('/notebooks')}
@@ -186,7 +186,6 @@ const NotebookDetail: React.FC = () => {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              <span className="font-medium">Back to Notebooks</span>
             </button>
 
             <div className="flex items-center gap-3">
@@ -213,12 +212,12 @@ const NotebookDetail: React.FC = () => {
 
               <button
                 onClick={() => setShowAddModal(true)}
-                className="btn-primary text-sm"
+                className="btn-primary text-sm flex items-center"
               >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Add Note
+                Add
               </button>
             </div>
           </div>
@@ -230,8 +229,8 @@ const NotebookDetail: React.FC = () => {
               </svg>
             </div>
             <div className="flex items-center justify-between flex-1">
-              <h1 className="text-xl font-semibold text-white">{notebook.title}</h1>
-              <div className="text-sm text-gray-400">
+              <h1 className="text-lg sm:text-xl font-semibold text-white">{notebook.title}</h1>
+              <div className="text-xs sm:text-sm text-gray-400">
                 {notebook.notes.length} {notebook.notes.length === 1 ? 'note' : 'notes'}
               </div>
             </div>
@@ -269,30 +268,49 @@ const NotebookDetail: React.FC = () => {
       </header>
 
       {/* Content */}
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {notebook.notes.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-12 h-12 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+          <div className="text-center py-16">
+            <div className="relative mb-8">
+              {/* Background decoration */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-32 h-32 bg-gradient-to-br from-orange-500/10 to-orange-600/5 rounded-full blur-xl"></div>
+              </div>
+              
+              {/* Main icon */}
+              <div className="relative w-16 h-16 bg-gray-800 border border-gray-700 rounded-2xl flex items-center justify-center mx-auto">
+                <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                
+                {/* Small plus indicator */}
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center border-2 border-black">
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+              </div>
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">No notes in this notebook</h3>
-            <p className="text-gray-400 mb-8 max-w-md mx-auto">
-              Add your first note to "{notebook.title}" to get started organizing your knowledge.
+            
+            <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">Ready to organize your thoughts</h3>
+            <p className="text-gray-400 mb-8 max-w-sm mx-auto text-sm sm:text-base">
+              Start building your knowledge collection by adding your first note to "{notebook.title}".
             </p>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="btn-primary"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Add First Note
-            </button>
+            
+            <div className="flex justify-center">
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="btn-primary text-sm sm:text-base inline-flex items-center"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Add Note
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {notebook.notes.map((note) => (
               <div key={note.id} className="relative">
                 {isManaging && (

@@ -181,7 +181,7 @@ const NoteView: React.FC = () => {
     <div className="min-h-screen bg-black pb-20">
       {/* Header */}
       <header className="bg-gray-900 border-b border-gray-800 sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={() => navigate('/')}
@@ -190,31 +190,17 @@ const NoteView: React.FC = () => {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              <span className="font-medium">Back to Knowledge Base</span>
             </button>
               
             <div className="flex items-center gap-3">
-              {!isEditing && (
-                <>
-                  <button
-                    onClick={() => setShowNotebookModal(true)}
-                    className="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-orange-400 hover:bg-gray-800 transition-colors"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={handleEdit}
-                    className="btn-primary"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Edit
-                  </button>
-                </>
-              )}
+              <button
+                onClick={() => setShowNotebookModal(true)}
+                className="w-10 h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-orange-400 hover:bg-gray-800 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </button>
               
               <button
                 onClick={() => setShowDeleteModal(true)}
@@ -230,10 +216,10 @@ const NoteView: React.FC = () => {
       </header>
 
       {/* Content */}
-      <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* AI Summary */}
         {note.ai_summary && (
-          <div className="bg-orange-900/20 border border-orange-700/30 rounded-xl p-6">
+          <div className="bg-orange-900/20 border border-orange-700/30 rounded-xl p-4 sm:p-6">
             <div className="flex items-start gap-4">
               <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -241,7 +227,7 @@ const NoteView: React.FC = () => {
                 </svg>
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-orange-200 mb-2">AI Summary</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-orange-200 mb-2">AI Summary</h3>
                 <p className="text-orange-100 leading-relaxed">
                   {note.ai_summary}
                 </p>
@@ -253,14 +239,14 @@ const NoteView: React.FC = () => {
         {/* Note Content */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
           {isEditing ? (
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                 </div>
-                <h2 className="text-xl font-semibold text-white">Edit Note</h2>
+                <h2 className="text-lg sm:text-xl font-semibold text-white">Edit Note</h2>
               </div>
 
               <div className="space-y-4">
@@ -314,17 +300,20 @@ const NoteView: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <h2 className="text-xl font-semibold text-white">Note Content</h2>
+                <h2 className="text-lg sm:text-xl font-semibold text-white">Note Content</h2>
               </div>
               
-              <div className="prose prose-lg max-w-none">
+              <div 
+                className="prose prose-lg max-w-none cursor-text hover:bg-gray-800/50 transition-colors rounded-lg p-3 -mx-3"
+                onClick={handleEdit}
+              >
                 <p className="whitespace-pre-wrap text-gray-100 leading-relaxed">
                   {note.content}
                 </p>

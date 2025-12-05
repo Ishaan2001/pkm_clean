@@ -47,12 +47,12 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
               {icon}
             </div>
-            <h1 className="text-xl font-semibold text-white">{title}</h1>
+            <h1 className="text-lg sm:text-xl font-semibold text-white">{title}</h1>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {subtitle && (
-              <div className="text-sm text-gray-400">
+              <div className="text-xs sm:text-sm text-gray-400 hidden sm:block">
                 {subtitle}
               </div>
             )}

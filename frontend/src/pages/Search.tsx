@@ -84,7 +84,7 @@ const Search: React.FC = () => {
     <div className="min-h-screen bg-black pb-20">
       {/* Header */}
       <header className="bg-gray-900 border-b border-gray-800 sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-4 py-4">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
@@ -92,7 +92,7 @@ const Search: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold text-white">Search Notes</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-white">Search Notes</h1>
             </div>
 
             {/* User Menu */}
@@ -183,7 +183,7 @@ const Search: React.FC = () => {
       </header>
 
       {/* Content */}
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {!searchQuery ? (
           <div className="text-center py-20">
             <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -191,7 +191,7 @@ const Search: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Search Your Notes</h3>
+            <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">Search Your Notes</h3>
             <p className="text-gray-400 max-w-md mx-auto">
               Enter keywords to search through your notes and AI-generated summaries.
             </p>
@@ -210,7 +210,7 @@ const Search: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">No results found</h3>
+            <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">No results found</h3>
             <p className="text-gray-400 max-w-md mx-auto">
               No notes found matching "{searchQuery}". Try different keywords or create a new note.
             </p>
@@ -226,7 +226,7 @@ const Search: React.FC = () => {
               </div>
             </div>
             
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {searchResults.map((note) => (
                 <div key={note.id} onClick={() => handleNoteClick(note)}>
                   <NoteCard 

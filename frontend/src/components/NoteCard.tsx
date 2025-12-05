@@ -67,7 +67,7 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, searchQuery }) => {
 
   return (
     <Link to={`/note/${note.id}`} className="block">
-      <div className="note-card p-4 space-y-3">
+      <div className="note-card p-3 sm:p-4 space-y-3">
         
         {/* AI Summary Section */}
         {note.ai_summary ? (
@@ -79,7 +79,7 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, searchQuery }) => {
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm text-orange-200 font-medium leading-relaxed">
+                <p className="text-xs sm:text-sm text-orange-200 font-medium leading-relaxed">
                   {highlightText(truncateContent(note.ai_summary, 100), searchQuery)}
                 </p>
               </div>
@@ -100,14 +100,14 @@ const NoteCard: React.FC<NoteCardProps> = ({ note, searchQuery }) => {
         
         {/* Note Content */}
         <div>
-          <p className="text-gray-100 text-base leading-relaxed line-clamp-3">
+          <p className="text-gray-100 text-sm sm:text-base leading-relaxed line-clamp-3">
             {highlightText(truncateContent(note.content, note.ai_summary ? 120 : 160), searchQuery)}
           </p>
         </div>
         
         {/* Footer */}
         <div className="flex items-center justify-between pt-2 border-t border-gray-800">
-          <span className="text-sm text-gray-400">
+          <span className="text-xs sm:text-sm text-gray-400">
             {formatDate(note.updated_at)}
           </span>
           <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
